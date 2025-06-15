@@ -52,11 +52,6 @@ class Product(models.Model):
         validators=[MinValueValidator(1)]
     )
     quantity = models.PositiveIntegerField(verbose_name='Количество на складе')
-    min_order = models.PositiveIntegerField(
-        default=1,
-        verbose_name='Минимальный заказ',
-        validators=[MinValueValidator(1)]
-    )
     sku = models.CharField(
         max_length=50,
         unique=True,
@@ -98,58 +93,3 @@ class ProductDocument(models.Model):
     class Meta:
         verbose_name = 'Документ'
         verbose_name_plural = 'Документы товара'
-
-
-class Order(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'В обработке'),
-        ('processing', 'В процессе'),
-        ('completed', 'Завершен'),
-        ('cancelled', 'Отменен'),
-    )
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    products = models.ManyToManyField(Product, through='OrderItem')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    notes = models.TextField(blank=True)
-
-    class Meta:
-        verbose_name = 'Заказ'
-        verbose_name_plural = 'Заказы'
-        ordering = ['-created_at'] # Сортировка по дате (новые сначала)
-
-    def __str__(self):
-        return f"Заказ #{self.id} ({self.user.username})"
-
-    @property
-    def total_price(self):
-        return sum(item.total_price for item in self.orderitem_set.all())
-
-    def get_status_display(self):
-        return dict(self.STATUS_CHOICES).get(self.status, self.status)
-
-    @property
-    def get_status_class(self):
-        status_classes = {
-            'pending': 'warning',
-            'processing': 'info',
-            'completed': 'success',
-            'cancelled': 'danger'
-        }
-        return status_classes.get(self.status, 'secondary')
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-
-    class Meta:
-        verbose_name = 'Позиция заказа'
-        verbose_name_plural = 'Позиции заказов'
-
-    @property
-    def total_price(self):
-        return self.price * self.quantity

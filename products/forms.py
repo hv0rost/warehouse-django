@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Product, ProductDocument, Order, User, Category
-from django.core.exceptions import ValidationError
+from .models import Product, ProductDocument, User, Category
 
 
 class RegistrationForm(UserCreationForm):
@@ -57,56 +56,7 @@ class DocumentUploadForm(forms.ModelForm):
         })
 
 
-class OrderForm(forms.Form):
-    quantity = forms.IntegerField(
-        label='Количество',
-        min_value=1,
-        initial=1,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'min': 1
-        })
-    )
-    notes = forms.CharField(
-        label='Комментарий',
-        required=False,
-        widget=forms.Textarea(attrs={
-            'rows': 3,
-            'class': 'form-control',
-            'placeholder': 'Ваши пожелания к заказу...'
-        })
-    )
-
-    def __init__(self, *args, product=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.product = product
-        if product:
-            self.fields['quantity'].widget.attrs['max'] = product.quantity
-
-    def clean_quantity(self):
-        quantity = self.cleaned_data['quantity']
-        if not self.product:
-            return quantity
-
-        if quantity < self.product.min_order and quantity < self.product.quantity:
-            raise ValidationError(
-                f'Минимальное количество для заказа: {self.product.min_order} шт.'
-            )
-
-        if quantity > self.product.quantity:
-            raise ValidationError(
-                f'Недостаточно товара на складе. Доступно: {self.product.quantity} шт.'
-            )
-
-        return quantity
-
-class OrderStatusForm(forms.ModelForm):
+class CategoryForm(forms.ModelForm):
     class Meta:
-        model = Order
-        fields = ['status']
-        widgets = {
-            'status': forms.Select(attrs={
-                'class': 'form-select',
-                'onchange': 'this.form.submit()'
-            })
-        }
+        model = Category
+        fields = ['name', 'description']

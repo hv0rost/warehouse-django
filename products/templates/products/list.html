@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Список товаров</h1>
+    </div>
+    <div class="col-md-4">
+        <div class="d-flex gap-2">
+            {% if is_staff %}
+            <a href="{% url 'add_product' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Добавить товар
+            </a>
+            
+            {% endif %}
+            <form method="get" class="flex-grow-1">
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-5">
+                        <label for="min_price" class="form-label">Минимальная цена</label>
+                        <input type="number" class="form-control" id="min_price" name="min_price" value="{{ request.GET.min_price }}">
+                    </div>
+                    <div class="col-md-5">
+                        <label for="max_price" class="form-label">Максимальная цена</label>
+                        <input type="number" class="form-control" id="max_price" name="max_price" value="{{ request.GET.max_price }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">Применить</button>
+                        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">Сбросить</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if products %}
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for product in products %}
+    <div class="col">
+        <div class="card h-100">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="bi bi-image text-white" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">{{ product.description|truncatechars:100 }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">{{ product.price }} ₽</span>
+                    <span class="badge bg-{% if product.quantity > 0 %}success{% else %}danger{% endif %}">
+                        {% if product.quantity > 0 %}В наличии ({{ product.quantity }}){% else %}Нет в наличии{% endif %}
+                    </span>
+                </div>
+                {% if is_staff %}
+                <div class="mt-2">
+                    <small class="text-muted">Артикул: {{ product.sku }}</small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'product_detail' product.id %}" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-eye"></i> Подробнее
+                    </a>
+                    {% if is_staff %}
+                    <div class="btn-group">
+                        <a href="{% url 'edit_product' product.id %}" class="btn btn-outline-primary" title="Редактировать">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger delete-btn" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteConfirmModal"
+                                data-product-id="{{ product.id }}"
+                                data-product-name="{{ product.name }}"
+                                title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="w-100 h-100">
+    <h5 class="text-center text-muted" role="alert" style="margin-top: 100px;">
+        Ничего не найдено
+    </h5>
+</div>
+{% endif %}
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить товар "<span id="deleteProductName"></span>"? Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" id="deleteForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="product_id" id="deleteProductId">
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация всех модальных окон
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        new bootstrap.Modal(modal);
+    });
+
+    // Обработка удаления товара
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    const deleteProductName = document.getElementById('deleteProductName');
+    const deleteProductId = document.getElementById('deleteProductId');
+    const deleteForm = document.getElementById('deleteForm');
+    const bsModal = new bootstrap.Modal(deleteModal);
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.dataset.productId;
+            const productName = this.dataset.productName;
+            
+            deleteProductName.textContent = productName;
+            deleteProductId.value = productId;
+            deleteForm.action = window.location.href;
+        });
+    });
+
+    // Обработка закрытия модального окна
+    deleteModal.addEventListener('hidden.bs.modal', function () {
+        deleteProductName.textContent = '';
+        deleteProductId.value = '';
+    });
+});
+</script>
+{% endblock %}
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.card-img-top {
+    border-top-left-radius: calc(0.25rem - 1px);
+    border-top-right-radius: calc(0.25rem - 1px);
+}
+</style>
+{% endblock %}

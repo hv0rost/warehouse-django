@@ -1,13 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Category, Product, ProductDocument, Order, OrderItem
+from .models import User, Category, Product, ProductDocument
 
 class ProductDocumentInline(admin.TabularInline):
     model = ProductDocument
-    extra = 1
-
-class OrderItemInline(admin.TabularInline):
-    model = OrderItem
     extra = 1
 
 @admin.register(User)
@@ -24,7 +20,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'wholesale_price', 'quantity', 'min_order')
+    list_display = ('name', 'category', 'price', 'wholesale_price', 'quantity')
     list_filter = ('category',)
     search_fields = ('name', 'sku', 'description')
     fieldsets = (
@@ -35,17 +31,9 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('price', 'wholesale_price', 'wholesale_threshold')
         }),
         ('Инвентаризация', {
-            'fields': ('quantity', 'min_order', 'sku')
+            'fields': ('quantity', 'sku')
         }),
     )
     list_editable = ('price', 'wholesale_price', 'quantity')
 
-@admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'status', 'created_at')
-    list_filter = ('status', 'created_at')
-    search_fields = ('user__username', 'notes')
-    inlines = [OrderItemInline]
-
 admin.site.register(ProductDocument)
-admin.site.register(OrderItem)

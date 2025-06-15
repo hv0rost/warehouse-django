@@ -5,8 +5,8 @@ from django.contrib import messages
 from django.db.models import Q
 from django.views.decorators.http import require_POST
 
-from .models import Product, Category, Order, ProductDocument, OrderItem, generate_sku
-from .forms import ProductForm, DocumentUploadForm, OrderForm, RegistrationForm, OrderStatusForm
+from .models import Product, Category, ProductDocument, generate_sku
+from .forms import ProductForm, DocumentUploadForm, RegistrationForm, CategoryForm
 from django.contrib.auth import login
 from django.utils.html import format_html
 from django.urls import reverse
@@ -14,14 +14,20 @@ from django.utils.safestring import mark_safe
 
 
 @login_required
-def catalog(request):
-    """Страница каталога с фильтрами"""
+def product_list(request):
+    """Страница каталога с фильтрами и управлением товарами"""
     query = request.GET.get('q', '')
     category_id = request.GET.get('category')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
+    show_all = request.GET.get('show_all', 'false') == 'true'
 
-    products = Product.objects.filter(quantity__gt=0)
+    # Базовый queryset
+    products = Product.objects.select_related('category')
+    
+    # Если не админ или не запрошены все товары, показываем только доступные
+    if not request.user.is_staff or not show_all:
+        products = products.filter(quantity__gt=0)
 
     if query:
         products = products.filter(
@@ -39,12 +45,34 @@ def catalog(request):
     if max_price:
         products = products.filter(price__lte=float(max_price))
 
+    # Обработка действий с товарами (только для админов)
+    if request.user.is_staff and request.method == 'POST':
+        action = request.POST.get('action')
+        product_id = request.POST.get('product_id')
+        
+        if action and product_id:
+            product = get_object_or_404(Product, pk=product_id)
+            
+            if action == 'delete':
+                product_name = product.name
+                product.delete()
+                messages.success(request, f'Товар "{product_name}" успешно удален!')
+            elif action == 'toggle_visibility':
+                product.is_active = not product.is_active
+                product.save()
+                status = 'активирован' if product.is_active else 'деактивирован'
+                messages.success(request, f'Товар "{product.name}" {status}!')
+            
+            return redirect('product_list')
+
     categories = Category.objects.all()
-    return render(request, 'catalog.html', {
+    return render(request, 'products/list.html', {
         'products': products,
         'categories': categories,
         'search_query': query,
         'selected_category': int(category_id) if category_id else None,
+        'show_all': show_all,
+        'is_staff': request.user.is_staff,
     })
 
 @login_required
@@ -65,99 +93,22 @@ def product_detail(request, pk):
     else:
         form = DocumentUploadForm()
 
-    return render(request, 'product_detail.html', {
+    return render(request, 'products/detail.html', {
         'product': product,
         'documents': documents,
         'form': form,
     })
 
 
-@login_required
-@user_passes_test(lambda u: u.is_staff)
-def update_order_status(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-    if request.method == 'POST':
-        form = OrderStatusForm(request.POST, instance=order)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f'Статус заказа #{order.id} изменен на "{order.get_status_display()}"')
-
-    return redirect(request.META.get('HTTP_REFERER', 'order_management'))
-
 
 @login_required
 def profile(request):
     """Личный кабинет пользователя"""
-    orders = Order.objects.filter(user=request.user).select_related(
-        'user'
-    ).prefetch_related(
-        'orderitem_set__product'
-    ).order_by('-created_at')
-
     return render(request, 'profile.html', {
-        'orders': orders,
         'user': request.user
     })
 
 
-@login_required
-def create_order(request, product_id):
-    product = get_object_or_404(Product, pk=product_id)
-
-    if request.method == 'POST':
-        form = OrderForm(request.POST, product=product)
-        if form.is_valid():
-            quantity = form.cleaned_data['quantity']
-            price = product.get_actual_price(quantity)
-
-            order = Order.objects.create(
-                user=request.user,
-                notes=form.cleaned_data['notes'],
-                status='pending'
-            )
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=quantity,
-                price=price
-            )
-
-            product.quantity -= quantity
-            product.save()
-
-            success_message = format_html(
-                '<h4 class="alert-heading">Заказ оформлен!</h4>'
-                '<p>Товар: <strong>{}</strong> × {} шт.</p>'
-                '<p>Цена за единицу: {} ₽</p>'
-                '<p>Общая сумма: <strong>{} ₽</strong></p>'
-                '<hr>'
-                '<p>Номер заказа: <strong>#{}</strong></p>',
-                product.name,
-                quantity,
-                price,
-                price * quantity,
-                order.id
-            )
-            messages.success(request, success_message)
-            return redirect('order_detail', order_id=order.id)
-    else:
-        form = OrderForm(product=product)
-
-    return render(request, 'create_order.html', {
-        'product': product,
-        'form': form,
-        'title': 'Оформление заказа'
-    })
-
-@login_required
-def order_detail(request, order_id):
-    order = get_object_or_404(Order.objects.prefetch_related('orderitem_set__product'),
-                            id=order_id,
-                            user=request.user)
-    return render(request, 'order_detail.html', {
-        'order': order,
-        'title': f'Заказ #{order.id}'
-    })
 
 
 def register(request):
@@ -185,15 +136,6 @@ def register(request):
 
 # Административные представления
 @user_passes_test(lambda u: u.is_staff)
-def product_management(request):
-    """Управление товарами (админка)"""
-    products = Product.objects.select_related('category').all()
-    return render(request, 'manage/product_management.html', {
-        'products': products,
-    })
-
-
-@user_passes_test(lambda u: u.is_staff)
 def add_product(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
@@ -207,7 +149,7 @@ def add_product(request):
             try:
                 product.save()
                 messages.success(request, f'Товар "{product.name}" успешно сохранен! SKU: {product.sku}')
-                return redirect('product_management')
+                return redirect('product_list')
             except IntegrityError:
                 messages.error(request, 'Товар с таким артикулом уже существует')
         else:
@@ -215,7 +157,7 @@ def add_product(request):
     else:
         form = ProductForm()
 
-    return render(request, 'manage/add_product.html', {
+    return render(request, 'products/form.html', {
         'form': form,
         'title': 'Добавление товара'
     })
@@ -229,11 +171,11 @@ def edit_product(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, f'Товар "{product.name}" успешно обновлен!')
-            return redirect('product_management')
+            return redirect('product_list')
     else:
         form = ProductForm(instance=product)
 
-    return render(request, 'manage/add_product.html', {
+    return render(request, 'products/form.html', {
         'form': form,
         'title': f'Редактирование {product.name}',
         'edit_mode': True
@@ -246,4 +188,50 @@ def delete_product(request, pk):
     product_name = product.name
     product.delete()
     messages.success(request, f'Товар "{product_name}" успешно удален!')
-    return redirect('product_management')
+    return redirect('product_list')
+
+
+# categories
+@login_required
+def category_list(request):
+    categories = Category.objects.all()
+    return render(request, 'categories/list.html', {'categories': categories})
+
+@user_passes_test(lambda u: u.is_staff)
+def category_add(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('category_list')
+    else:
+        form = CategoryForm()
+    return render(request, 'categories/form.html', {'form': form, 'title': 'Добавить категорию'})
+
+@user_passes_test(lambda u: u.is_staff)
+def category_edit(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return redirect('category_list')
+    else:
+        form = CategoryForm(instance=category)
+    return render(request, 'categories/form.html', {'form': form, 'title': 'Редактировать категорию'})
+
+@user_passes_test(lambda u: u.is_staff)
+def category_delete(request, pk):
+    """Удаление категории"""
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'POST':
+        category_name = category.name
+        try:
+            category.delete()
+            messages.success(request, f'Категория "{category_name}" успешно удалена!')
+        except IntegrityError:
+            messages.error(request, f'Невозможно удалить категорию "{category_name}", так как она используется в товарах.')
+    
+    return redirect('category_list')
+
