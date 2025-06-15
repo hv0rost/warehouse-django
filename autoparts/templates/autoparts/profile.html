@@ -1,0 +1,99 @@
+{% extends 'autoparts/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle"></i> Профиль
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Телефон:</strong> {{ user.phone|default:"Не указан" }}</p>
+                    <p><strong>Адрес:</strong> {{ user.address|default:"Не указан" }}</p>
+                    <a href="#" class="btn btn-outline-primary w-100 mt-2">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul"></i> История заказов
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>№</th>
+                                    <th>Дата</th>
+                                    <th>Статус</th>
+                                    <th>Товары</th>
+                                    <th>Сумма</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in orders %}
+                                <tr>
+                                    <td>{{ order.id }}</td>
+                                    <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ order.get_status_class }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% for item in order.orderitem_set.all %}
+                                        {{ item.part.name }} × {{ item.quantity }}<br>
+                                        {% endfor %}
+                                    </td>
+                                    <td>{{ order.total_price }} ₽</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'order_detail' order.id %}"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Подробнее">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> У вас пока нет заказов
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .badge {
+        font-size: 0.85em;
+        padding: 0.35em 0.65em;
+    }
+
+    .bg-warning {
+        background-color: #ffc107!important;
+    }
+</style>
+{% endblock %}

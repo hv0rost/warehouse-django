@@ -1,0 +1,103 @@
+{% extends 'autoparts/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-cart-check"></i> Оформление заказа
+                    </h3>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <!-- Информация о товаре -->
+                        <div class="col-md-5">
+                            <div class="card h-100">
+                                {% if part.image %}
+                                <img src="{{ part.image.url }}" class="card-img-top p-3" alt="{{ part.name }}" style="max-height: 250px; object-fit: contain;">
+                                {% else %}
+                                <div class="text-center py-5 bg-light">
+                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ part.name }}</h5>
+                                    <p class="text-muted">Артикул: {{ part.sku }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fs-4 fw-bold text-primary">{{ part.price }} ₽</span>
+                                        <span class="badge bg-success">В наличии: {{ part.quantity }} шт.</span>
+                                    </div>
+                                    {% if part.wholesale_price %}
+                                    <div class="mt-2 alert alert-info p-2">
+                                        <small>
+                                            <i class="bi bi-tag"></i> Опт от {{ part.wholesale_threshold }} шт. по {{ part.wholesale_price }} ₽
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Форма заказа -->
+                        <div class="col-md-7">
+                            <form method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+
+                                <div class="mb-4">
+                                    <h5 class="mb-3">
+                                        <i class="bi bi-clipboard-check"></i> Параметры заказа
+                                    </h5>
+
+                                    {{ form.quantity|as_crispy_field }}
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Итоговая цена</label>
+                                        <input type="text" class="form-control fw-bold"
+                                               value="{{ part.price }} ₽"
+                                               id="order-total"
+                                               disabled>
+                                    </div>
+
+                                    {{ form.notes|as_crispy_field }}
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{% url 'part_detail' part.id %}" class="btn btn-outline-secondary me-md-2">
+                                        <i class="bi bi-arrow-left"></i> Назад
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle"></i> Подтвердить заказ
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('id_quantity');
+    const price = {{ part.price }};
+    const wholesalePrice = {{ part.wholesale_price|default:0 }};
+    const threshold = {{ part.wholesale_threshold|default:0 }};
+    const totalField = document.getElementById('order-total');
+
+    function updateTotal() {
+        const quantity = parseInt(quantityInput.value);
+        const finalPrice = (wholesalePrice && quantity >= threshold) ? wholesalePrice : price;
+        totalField.value = (finalPrice * quantity).toFixed(2) + ' ₽';
+    }
+
+    quantityInput.addEventListener('change', updateTotal);
+    updateTotal(); // Инициализация при загрузке
+});
+</script>
+{% endblock %}
