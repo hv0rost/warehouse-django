@@ -5,12 +5,11 @@ from django.core.validators import FileExtensionValidator, MinValueValidator
 
 class User(AbstractUser):
     ROLES = (
-        ('manage', 'Администратор'),
+        ('admin', 'Администратор'),
         ('manager', 'Менеджер'),
         ('client', 'Клиент'),
-        ('guest', 'Гость'),
     )
-    role = models.CharField(max_length=10, choices=ROLES, default='guest')
+    role = models.CharField(max_length=10, choices=ROLES, default='client')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
 

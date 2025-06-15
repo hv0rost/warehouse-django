@@ -6,8 +6,8 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('catalog/', views.catalog, name='catalog'),
+    # path('', views.index, name='index'),
+    path('', views.catalog, name='catalog'),
     path('part/<int:pk>/', views.part_detail, name='part_detail'),
     path('profile/', views.profile, name='profile'),
     path('create_order/<int:part_id>/', views.create_order, name='create_order'),

@@ -1,0 +1,210 @@
+/* Карточки */
+.card {
+    background: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    border-radius: var(--border-radius);
+    border: none;
+    transition: box-shadow var(--transition-speed) var(--transition-timing);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    background-color: rgba(0,0,0,0.02);
+}
+
+/* Изображения в карточках */
+.card-img-top {
+    height: 200px;
+    object-fit: contain;
+    background: #f4f6fb;
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    padding: var(--spacing-sm);
+}
+
+.part-image {
+    max-height: 400px;
+    width: auto;
+    max-width: 100%;
+    border-radius: var(--border-radius);
+}
+
+/* Таблицы */
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.table th {
+    font-weight: 600;
+    background-color: rgba(0,0,0,0.02);
+}
+
+/* Кнопки */
+.btn {
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed) var(--transition-timing);
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* Бейджи */
+.badge {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius);
+    font-weight: 500;
+}
+
+/* Формы */
+.form-control {
+    border-radius: var(--border-radius);
+    transition: border-color var(--transition-speed) var(--transition-timing),
+                box-shadow var(--transition-speed) var(--transition-timing);
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Модальные окна */
+.modal-content {
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Алерты */
+.alert {
+    border-radius: var(--border-radius);
+    border: none;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Навигация */
+.nav-link {
+    transition: color var(--transition-speed) var(--transition-timing);
+}
+
+/* Иконки */
+.bi {
+    line-height: 1;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    transition: all 0.3s;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: var(--sidebar-text);
+}
+
+.sidebar-menu {
+    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar-menu .nav-link {
+    color: rgba(255,255,255,0.8);
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-menu .nav-link:hover,
+.sidebar-menu .nav-link.active {
+    color: var(--sidebar-text);
+    background: rgba(6,182,212,0.15);
+}
+
+.sidebar-menu .nav-link i {
+    width: 1.5rem;
+    text-align: center;
+}
+
+/* Search Form */
+.search-form {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.search-form .form-control {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--sidebar-text);
+}
+
+.search-form .form-control::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.search-form .btn {
+    color: var(--sidebar-text);
+    border-color: rgba(255,255,255,0.2);
+}
+
+.search-form .btn:hover {
+    background: rgba(6,182,212,0.15);
+    border-color: var(--secondary-color);
+}
+
+/* User Info */
+.user-info {
+    /* padding:  0 0 1rem; */
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin-top: auto;
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--text-light) !important;
+    border-radius: var(--border-radius);
+    transition: background 0.2s, border 0.2s;
+}
+.btn-primary:hover {
+    background: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+}
+
+.btn-outline-light {
+    color: var(--sidebar-text) !important;
+    border-color: rgba(255,255,255,0.3) !important;
+    border-radius: var(--border-radius);
+}
+.btn-outline-light:hover {
+    background: var(--secondary-color) !important;
+    color: var(--text-light) !important;
+    border-color: var(--secondary-color) !important;
+} 

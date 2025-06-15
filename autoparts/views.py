@@ -13,17 +13,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 
-def index(request):
-    categories = Category.objects.all()[:6]
-    new_parts = Part.objects.filter(quantity__gt=0).order_by('-created_at')[:8]
-
-    return render(request, 'autoparts/index.html', {
-        'categories': categories,
-        'parts': new_parts,
-        'title': 'Главная страница'
-    })
-
-
+@login_required
 def catalog(request):
     """Страница каталога с фильтрами"""
     query = request.GET.get('q', '')
@@ -57,7 +47,7 @@ def catalog(request):
         'selected_category': int(category_id) if category_id else None,
     })
 
-
+@login_required
 def part_detail(request, pk):
     """Детальная страница запчасти"""
     part = get_object_or_404(Part.objects.prefetch_related('documents'), pk=pk)
