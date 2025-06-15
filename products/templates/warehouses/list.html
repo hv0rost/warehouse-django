@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Склады</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'warehouse_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Добавить склад
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if warehouses %}
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for warehouse in warehouses %}
+    <div class="col">
+        <div class="card h-100">
+            {% if warehouse.image %}
+            <img src="{{ warehouse.image.url }}" class="card-img-top" alt="{{ warehouse.name }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="bi bi-building text-white" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ warehouse.name }}</h5>
+                <p class="card-text">
+                    <i class="bi bi-geo-alt"></i> {{ warehouse.address }}
+                </p>
+                <p class="card-text">{{ warehouse.description|truncatechars:100 }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="bi bi-box"></i> Товаров: {{ warehouse.product_set.count }}
+                    </small>
+                    <small class="text-muted">
+                        <i class="bi bi-people"></i> Сотрудников: {{ warehouse.employees.count }}
+                    </small>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'warehouse_detail' warehouse.id %}" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-eye"></i> Подробнее
+                    </a>
+                    <div class="btn-group">
+                        <a href="{% url 'warehouse_edit' warehouse.id %}" class="btn btn-outline-primary" title="Редактировать">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger delete-btn" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteConfirmModal"
+                                data-warehouse-id="{{ warehouse.id }}"
+                                data-warehouse-name="{{ warehouse.name }}"
+                                title="Удалить">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> 
+    Ничего не найдено
+</div>
+{% endif %}
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Вы действительно хотите удалить склад "<span id="warehouseName"></span>"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    const deleteForm = document.getElementById('deleteForm');
+    const warehouseNameSpan = document.getElementById('warehouseName');
+    
+    deleteModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const warehouseId = button.getAttribute('data-warehouse-id');
+        const warehouseName = button.getAttribute('data-warehouse-name');
+        
+        warehouseNameSpan.textContent = warehouseName;
+        deleteForm.action = `/warehouses/${warehouseId}/delete/`;
+    });
+});
+</script>
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    .card-img-top {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    .alert {
+        border-radius: 8px;
+    }
+</style>
+{% endblock %} 

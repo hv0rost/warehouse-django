@@ -7,13 +7,13 @@
 <input type="hidden" name="edit_mode" value="true">
 {% endif %}
 <div class="row mb-4">
-        <div class="col-md-10">
-        <h1>{{ title }}</h1>
-    </div>
-    <div class="row justify-content-center">
+    <div class="col-md-10">
+    <h1>{{ title }}</h1>
+</div>
 
-
-    <div class="p-10 bg-white rounded-3">
+<div class="row justify-content-center">
+        <div class="card">
+            <div class="card-body">
             {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
@@ -28,24 +28,20 @@
             <form method="post" enctype="multipart/form-data" id="partForm" novalidate>
                 {% csrf_token %}
 
-                <div class="row g-3 p-2">
-                    <!-- Основная информация -->
+                <div class="row g-3">
+                    <!-- Левая колонка -->
                     <div class="col-md-6">
                         {{ form.name|as_crispy_field }}
                         {{ form.category|as_crispy_field }}
-                        {{ form.sku|as_crispy_field }}
-                        {{ form.image|as_crispy_field }}
+                        {{ form.warehouse|as_crispy_field }}
+                        {{ form.price|as_crispy_field }}
                     </div>
 
-                    <!-- Цены и количество -->
+                    <!-- Правая колонка -->
                     <div class="col-md-6">
-                        <div class="row g-2">
-                            <div class="col-md-6">{{ form.price|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.wholesale_price|as_crispy_field }}</div>
-                            <div class="col-12">{{ form.wholesale_threshold|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.quantity|as_crispy_field }}</div>
-                            <div class="col-md-6">{{ form.min_order|as_crispy_field }}</div>
-                        </div>
+                        {{ form.sku|as_crispy_field }}
+                        {{ form.quantity|as_crispy_field }}
+                        {{ form.image|as_crispy_field }}
                     </div>
 
                     <!-- Описание -->

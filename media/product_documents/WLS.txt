@@ -1,0 +1,5 @@
+mnt/c доступ до ДИСКА :С
+
+1) docker login --username=hv0rost     - Авторизация на докер ХАБ
+2) docker compose build  - билд docker compose 
+3) docker compose up  - запуск docker compose 

@@ -21,6 +21,13 @@ urlpatterns = [
     path('categories/<int:pk>/edit/', views.category_edit, name='category_edit'),
     path('categories/<int:pk>/delete/', views.category_delete, name='category_delete'),
 
+    # Склады
+    path('warehouses/', views.warehouse_list, name='warehouse_list'),
+    path('warehouses/<int:pk>/', views.warehouse_detail, name='warehouse_detail'),
+    path('warehouses/add/', views.warehouse_create, name='warehouse_create'),
+    path('warehouses/<int:pk>/edit/', views.warehouse_edit, name='warehouse_edit'),
+    path('warehouses/<int:pk>/delete/', views.warehouse_delete, name='warehouse_delete'),
+
     # Auth URLs
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),

@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ warehouse.name }}</h1>
+        <p class="text-muted">
+            <i class="bi bi-geo-alt"></i> {{ warehouse.address }}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'warehouse_edit' warehouse.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+            <button type="button" class="btn btn-outline-danger" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteConfirmModal"
+                    data-warehouse-id="{{ warehouse.id }}"
+                    data-warehouse-name="{{ warehouse.name }}">
+                <i class="bi bi-trash"></i> Удалить
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+<div class="mb-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Изображение и основная информация -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            {% if warehouse.image %}
+            <img src="{{ warehouse.image.url }}" class="card-img-top" alt="{{ warehouse.name }}" style="height: 300px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 300px;">
+                <i class="bi bi-building text-white" style="font-size: 5rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">Информация о складе</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Название</dt>
+                    <dd class="col-sm-8">{{ warehouse.name }}</dd>
+                    
+                    <dt class="col-sm-4">Адрес</dt>
+                    <dd class="col-sm-8">{{ warehouse.address }}</dd>
+                    
+                    <dt class="col-sm-4">Описание</dt>
+                    <dd class="col-sm-8">{{ warehouse.description|default:"Нет описания"|linebreaks }}</dd>
+                    
+                    <dt class="col-sm-4">Дата создания</dt>
+                    <dd class="col-sm-8">{{ warehouse.created_at|date:"d.m.Y H:i" }}</dd>
+                    
+                    <dt class="col-sm-4">Последнее обновление</dt>
+                    <dd class="col-sm-8">{{ warehouse.updated_at|date:"d.m.Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Статистика</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ products.count }}</h3>
+                                <p class="card-text text-muted mb-0">Товаров на складе</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h3 class="card-title">{{ employees.count }}</h3>
+                                <p class="card-text text-muted mb-0">Сотрудников</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Список товаров -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Товары на складе</h5>
+        {% if user.is_staff or user.role == 'manager' %}
+        <a href="{% url 'add_product' %}?warehouse={{ warehouse.id }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle"></i> Добавить товар
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if products %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Артикул</th>
+                        <th>Категория</th>
+                        <th>Цена</th>
+                        <th>Количество</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.sku }}</td>
+                        <td>{{ product.category.name }}</td>
+                        <td>{{ product.price }} ₽</td>
+                        <td>{{ product.quantity }}</td>
+                        <td>
+                            <span class="badge bg-{% if product.is_active %}success{% else %}danger{% endif %}">
+                                {% if product.is_active %}Активен{% else %}Неактивен{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary" title="Просмотр">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'edit_product' product.id %}" class="btn btn-outline-primary" title="Редактировать">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> На складе пока нет товаров
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Список сотрудников -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Сотрудники склада</h5>
+    </div>
+    <div class="card-body">
+        {% if employees %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Имя пользователя</th>
+                        <th>Email</th>
+                        <th>Последний вход</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr>
+                        <td>{{ employee.user.username }}</td>
+                        <td>{{ employee.user.email }}</td>
+                        <td>{{ employee.user.last_login|date:"d.m.Y H:i"|default:"Никогда" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> На складе пока нет сотрудников
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Вы действительно хотите удалить склад "<span id="warehouseName"></span>"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteConfirmModal');
+    const deleteForm = document.getElementById('deleteForm');
+    const warehouseNameSpan = document.getElementById('warehouseName');
+    
+    deleteModal.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        const warehouseId = button.getAttribute('data-warehouse-id');
+        const warehouseName = button.getAttribute('data-warehouse-name');
+        
+        warehouseNameSpan.textContent = warehouseName;
+        deleteForm.action = `/warehouses/${warehouseId}/delete/`;
+    });
+});
+</script>
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+    .card-img-top {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    .alert {
+        border-radius: 8px;
+    }
+</style>
+{% endblock %} 

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator, MinValueValidator
+from django.core.exceptions import ValidationError
+from django.utils.crypto import get_random_string
 
 
 class User(AbstractUser):
@@ -14,82 +16,120 @@ class User(AbstractUser):
     address = models.TextField(blank=True)
 
 
-class Category(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
+class Warehouse(models.Model):
+    """Модель склада"""
+    name = models.CharField('Название', max_length=100)
+    address = models.CharField('Адрес', max_length=200)
+    description = models.TextField('Описание', blank=True)
+    image = models.ImageField('Изображение', upload_to='warehouses/', blank=True, null=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
 
     class Meta:
-        verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'
+        verbose_name = 'Склад'
+        verbose_name_plural = 'Склады'
+        ordering = ['name']
 
     def __str__(self):
         return self.name
 
+    def clean(self):
+        # Проверка на уникальность названия склада
+        if Warehouse.objects.filter(name=self.name).exclude(pk=self.pk).exists():
+            raise ValidationError({'name': 'Склад с таким названием уже существует'})
+
+
+class UserProfile(models.Model):
+    """Профиль пользователя"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, blank=True,
+                                 verbose_name='Склад', related_name='employees')
+    
+    class Meta:
+        verbose_name = 'Профиль пользователя'
+        verbose_name_plural = 'Профили пользователей'
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.warehouse.name if self.warehouse else 'Нет склада'}"
+
+
+class Category(models.Model):
+    """Модель категории товаров"""
+    name = models.CharField('Название', max_length=100)
+    description = models.TextField('Описание', blank=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        if Category.objects.filter(name=self.name).exclude(pk=self.pk).exists():
+            raise ValidationError({'name': 'Категория с таким названием уже существует'})
+
 
 def generate_sku():
-    last_part = Product.objects.order_by('-id').first()
-    return f"PART-{(last_part.id + 1) if last_part else 1}"
+    """Генерация уникального артикула"""
+    while True:
+        sku = f"SKU-{get_random_string(8).upper()}"
+        if not Product.objects.filter(sku=sku).exists():
+            return sku
+
 
 class Product(models.Model):
-    name = models.CharField(max_length=200, verbose_name='Название')
-    category = models.ForeignKey('Category', on_delete=models.CASCADE, verbose_name='Категория')
-    description = models.TextField(verbose_name='Описание')
-    price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Розничная цена'
-    )
-    wholesale_price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Оптовая цена',
-        blank=True,
-        null=True
-    )
-    wholesale_threshold = models.IntegerField(
-        default=10,
-        verbose_name='Порог для опта',
-        validators=[MinValueValidator(1)]
-    )
-    quantity = models.PositiveIntegerField(verbose_name='Количество на складе')
-    sku = models.CharField(
-        max_length=50,
-        unique=True,
-        verbose_name='Артикул',
-        default=generate_sku
-    )
-    image = models.ImageField(
-        upload_to='products/',
-        blank=True,
-        null=True,
-        verbose_name='Изображение'
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
+    """Модель товара"""
+    name = models.CharField('Название', max_length=200)
+    sku = models.CharField('Артикул', max_length=50, unique=True, blank=True)
+    description = models.TextField('Описание', blank=True)
+    category = models.ForeignKey(Category, on_delete=models.PROTECT, verbose_name='Категория')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, verbose_name='Склад', null=True, blank=True)
+    price = models.DecimalField('Цена', max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField('Количество', default=0)
+    image = models.ImageField('Изображение', upload_to='products/', blank=True, null=True)
+    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
+    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Создал', null=True, blank=True)
+    is_active = models.BooleanField('Активен', default=True)
 
     class Meta:
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
         ordering = ['-created_at']
+        permissions = [
+            ("can_manage_warehouse_products", "Может управлять товарами склада"),
+        ]
 
     def __str__(self):
-        return f"{self.name} ({self.sku})"
+        return f"{self.name} ({self.warehouse.name})"
 
-    def get_actual_price(self, quantity):
-        if self.wholesale_price and quantity >= self.wholesale_threshold:
-            return self.wholesale_price
-        return self.price
+    def clean(self):
+        # Проверка на уникальность артикула в рамках склада
+        if Product.objects.filter(sku=self.sku, warehouse=self.warehouse).exclude(pk=self.pk).exists():
+            raise ValidationError({'sku': 'Товар с таким артикулом уже существует на этом складе'})
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            self.sku = generate_sku()
+        super().save(*args, **kwargs)
 
 
 class ProductDocument(models.Model):
+    """Модель документа товара"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='documents')
-    file = models.FileField(
-        upload_to='product_documents/',
-        validators=[FileExtensionValidator(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'odt'])]
-    )
-    description = models.CharField(max_length=255, blank=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file = models.FileField('Файл', upload_to='product_documents/')
+    name = models.CharField('Название', max_length=200, null=True, blank=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True)
+    uploaded_at = models.DateTimeField('Дата загрузки', auto_now_add=True)
 
     class Meta:
-        verbose_name = 'Документ'
-        verbose_name_plural = 'Документы товара'
+        verbose_name = 'Документ товара'
+        verbose_name_plural = 'Документы товаров'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.product.name}"

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Product, ProductDocument, User, Category
+from .models import Product, ProductDocument, User, Category, Warehouse
 
 
 class RegistrationForm(UserCreationForm):
@@ -16,47 +16,83 @@ class RegistrationForm(UserCreationForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['name', 'sku', 'description', 'category', 'warehouse', 'price', 'quantity', 'image', 'is_active']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.initial_warehouse = kwargs.pop('initial_warehouse', None)
         super().__init__(*args, **kwargs)
-        self.fields['sku'].required = True
-        self.fields['sku'].label = "Артикул"
+        
+        # Если пользователь менеджер
+        if self.user and self.user.role == 'manager':
+            if hasattr(self.user, 'profile') and self.user.profile.warehouse:
+                self.fields['warehouse'].widget = forms.HiddenInput()
+                self.fields['warehouse'].initial = self.user.profile.warehouse
+            else:
+                self.fields['warehouse'].widget = forms.HiddenInput()
+        else:
+            # Для всех остальных warehouse обязателен и видим
+            self.fields['warehouse'].required = True
+        if self.user and self.user.is_staff and self.initial_warehouse:
+            self.fields['warehouse'].initial = self.initial_warehouse
 
-    def clean_sku(self):
-        sku = self.cleaned_data.get('sku')
-        if not sku:
-            # Генерируем SKU только если поле пустое
-            last_part = Product.objects.order_by('-id').first()
-            sku = f"PART-{(last_part.id + 1) if last_part else 1}"
-        return sku
+    def clean(self):
+        cleaned_data = super().clean()
+        warehouse = cleaned_data.get('warehouse')
+        if self.user and self.user.role == 'manager':
+            if hasattr(self.user, 'profile') and self.user.profile.warehouse:
+                cleaned_data['warehouse'] = self.user.profile.warehouse
+            else:
+                raise forms.ValidationError('У вас нет привязанного склада. Обратитесь к администратору.')
+        elif not warehouse:
+            raise forms.ValidationError('Поле "Склад" обязательно для заполнения.')
+        return cleaned_data
 
 
 class DocumentUploadForm(forms.ModelForm):
     class Meta:
         model = ProductDocument
-        fields = ['file', 'description']
-        labels = {
-            'file': 'Файл документа',
-            'description': 'Описание документа'
-        }
+        fields = ['name', 'file']
         widgets = {
-            'description': forms.Textarea(attrs={
-                'rows': 3,
-                'class': 'form-control',
-                'placeholder': 'Введите описание документа'
-            }),
+            'name': forms.TextInput(attrs={'placeholder': 'Название документа'}),
         }
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.fields['file'].widget.attrs.update({
-            'class': 'form-control',
-            'accept': '.pdf,.doc,.docx,.xls,.xlsx,.odt'
-        })
+
+    def save(self, commit=True):
+        document = super().save(commit=False)
+        if self.user:
+            document.uploaded_by = self.user
+        if commit:
+            document.save()
+        return document
 
 
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ['name', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class WarehouseForm(forms.ModelForm):
+    class Meta:
+        model = Warehouse
+        fields = ['name', 'address', 'description', 'image']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        if name and Warehouse.objects.filter(name=name).exclude(pk=self.instance.pk if self.instance else None).exists():
+            raise forms.ValidationError('Склад с таким названием уже существует')
+        return cleaned_data
