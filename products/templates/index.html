@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="p-5 bg-light rounded-3">
+                <div class="container-fluid py-5 text-center">
+                    <h1 class="display-5 fw-bold">Добро пожаловать в магазин автозапчастей</h1>
+                    <p class="fs-4">Широкий ассортимент запчастей для всех популярных марок автомобилей</p>
+                    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg">Перейти в каталог</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-4"><i class="bi bi-star"></i> Популярные категории</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+        {% for category in categories %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <p class="card-text">{{ category.description|default:" "|truncatechars:100 }}</p>
+                    <a href="{% url 'catalog' %}?category={{ category.id }}" class="btn btn-outline-primary">
+                        Смотреть товары
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2 class="mb-4"><i class="bi bi-arrow-up-right-circle"></i> Новинки</h2>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+        {% for part in parts %}
+        <div class="col">
+            <div class="card h-100">
+                {% if part.image %}
+                <img src="{{ part.image.url }}" class="card-img-top p-2" alt="{{ part.name }}" style="height: 180px; object-fit: contain;">
+                {% else %}
+                <div class="text-center py-4 bg-light">
+                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ part.name|truncatechars:25 }}</h5>
+                    <p class="text-muted small">Арт: {{ part.sku }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-primary">{{ part.price }} ₽</span>
+                        <span class="badge bg-{% if part.quantity > 0 %}success{% else %}danger{% endif %}">
+                            {% if part.quantity > 0 %}В наличии{% else %}Нет в наличии{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <a href="{% url 'part_detail' part.id %}" class="btn btn-primary w-100">
+                        <i class="bi bi-eye"></i> Подробнее
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
