@@ -94,21 +94,69 @@ body {
     margin-top: auto;
 }
 
+/* Кнопка меню для мобильных устройств */
+.mobile-menu-btn {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 1001;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: #fff;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+                0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: #f8f9fa;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15),
+                0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-menu-btn i {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .sidebar {
-        margin-left: calc(-1 * var(--sidebar-width));
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
     }
     
     .sidebar.active {
-        margin-left: 0;
+        transform: translateX(0);
     }
     
     .main-content {
         margin-left: 0;
+        padding: 1rem;
+        padding-top: 4rem; /* Добавляем отступ сверху для кнопки меню */
     }
     
     .main-content.sidebar-active {
-        margin-left: var(--sidebar-width);
+        margin-left: 0;
+    }
+
+    /* Затемнение фона при открытом меню */
+    .sidebar.active::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
     }
 } 

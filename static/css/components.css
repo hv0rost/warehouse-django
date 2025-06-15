@@ -47,6 +47,9 @@
 .btn {
     border-radius: var(--border-radius);
     transition: all var(--transition-speed) var(--transition-timing);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .btn-icon {
@@ -207,4 +210,15 @@
     background: var(--secondary-color) !important;
     color: var(--text-light) !important;
     border-color: var(--secondary-color) !important;
+}
+
+/* Адаптивные кнопки с иконками */
+@media (max-width: 768px) {
+    .btn {
+        padding: 0.5rem;
+    }
+    
+    .btn i {
+        margin: 0;
+    }
 } 

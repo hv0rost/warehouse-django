@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
+<div class="row mb-4 align-items-center">
+    <div class="col">
         <h1>Склады</h1>
     </div>
-    <div class="col-md-4 text-end">
+    <div class="col-auto">
         <a href="{% url 'warehouse_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Добавить склад
+            <i class="bi bi-plus-circle"></i>
+            <span class="d-none d-md-inline">Добавить склад</span>
         </a>
     </div>
 </div>

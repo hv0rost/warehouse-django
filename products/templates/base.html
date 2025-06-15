@@ -4,20 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Склад товаров{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/variables.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/utilities.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        .mobile-menu-btn {
+            position: fixed;
+            top: 0.75rem;
+            left: 0.75rem;
+            z-index: 1001;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+                        0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-btn:hover {
+            background: #f8f9fa;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15),
+                        0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-menu-btn i {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     {% if user.is_authenticated %}
+    <!-- Кнопка меню для мобильных устройств -->
+    <button class="mobile-menu-btn d-md-none" type="button" id="menuToggle">
+        <i class="bi bi-list"></i>
+    </button>
+
     <!-- Боковое меню -->
-    <nav class="sidebar">
+    <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h4 class="mb-0 text-center">Товары</h4>
         </div>
@@ -75,7 +114,7 @@
     {% endif %}
 
     <!-- Основной контент -->
-    <main class="main-content">
+    <main class="main-content" id="mainContent">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -88,6 +127,32 @@
         {% block content %}{% endblock %}
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            if (menuToggle && sidebar && mainContent) {
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    mainContent.classList.toggle('sidebar-active');
+                });
+
+                // Закрываем меню при клике вне его на мобильных устройствах
+                document.addEventListener('click', function(event) {
+                    const isClickInsideSidebar = sidebar.contains(event.target);
+                    const isClickOnMenuToggle = menuToggle.contains(event.target);
+                    
+                    if (!isClickInsideSidebar && !isClickOnMenuToggle && window.innerWidth < 768) {
+                        sidebar.classList.remove('active');
+                        mainContent.classList.remove('sidebar-active');
+                    }
+                });
+            }
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,14 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-10">
+<div class="row mb-4 align-items-center">
+    <div class="col">
         <h1>Категории</h1>
     </div>
-    
-    <div class="col-md-2">
-        <a href="{% url 'category_add' %}" class="btn btn-primary mb-3 w-100">
-            <i class="bi bi-plus"></i>
-            Добавить категорию
+    <div class="col-auto">
+        <a href="{% url 'category_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i>
+            <span class="d-none d-md-inline">Добавить категорию</span>
         </a>
     </div>
 </div>

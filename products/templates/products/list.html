@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
+<div class="row mb-4 align-items-center">
+    <div class="col">
         <h1>Список товаров</h1>
     </div>
-    <div class="col-md-4 text-end">
-        {% if is_staff %}
+    {% if is_staff %}
+    <div class="col-auto">
         <a href="{% url 'add_product' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Добавить товар
+            <i class="bi bi-plus-circle"></i> 
+            <span class="d-none d-md-inline">Добавить товар</span>
         </a>
-        {% endif %}
     </div>
+    {% endif %}
 </div>
 
 <!-- Фильтры -->
