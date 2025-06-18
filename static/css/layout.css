@@ -133,17 +133,17 @@ body {
         transform: translateX(-100%);
         box-shadow: var(--shadow-lg);
     }
-    
+
     .sidebar.active {
         transform: translateX(0);
     }
-    
+
     .main-content {
         margin-left: 0;
         padding: 1rem;
         padding-top: 4rem; /* Добавляем отступ сверху для кнопки меню */
     }
-    
+
     .main-content.sidebar-active {
         margin-left: 0;
     }
@@ -159,4 +159,4 @@ body {
         background: rgba(0, 0, 0, 0.5);
         z-index: -1;
     }
-} 
+}

@@ -217,8 +217,12 @@
     .btn {
         padding: 0.5rem;
     }
-    
+
     .btn i {
         margin: 0;
     }
-} 
+}
+
+.alert-alert-success {
+    background-color: #28df8a4d !important;
+}
